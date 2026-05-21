@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node server.js)",
+      "Bash(Start-Sleep -Seconds 2)",
+      "Bash(Get-Content \"C:\\\\Users\\\\karinb\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-karinb-Documents-projects-NetMap---Test\\\\14461538-5527-4f9f-b09b-3cf3390d401c\\\\tasks\\\\bhfh45qol.output\")",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force -ErrorAction SilentlyContinue)"
+    ]
+  }
+}

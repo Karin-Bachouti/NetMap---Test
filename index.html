@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NetMap — Device Manager</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+
+    <header class="app-header">
+      <div class="app-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <circle cx="12" cy="5" r="3"/>
+          <circle cx="5" cy="19" r="3"/>
+          <circle cx="19" cy="19" r="3"/>
+          <line x1="12" y1="8" x2="5.5" y2="16.2"/>
+          <line x1="12" y1="8" x2="18.5" y2="16.2"/>
+        </svg>
+        <h1>NetMap</h1>
+        <span class="subtitle">Device Manager</span>
+      </div>
+      <div class="toolbar">
+        <button id="btn-add" class="btn btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Device
+        </button>
+        <div class="toolbar-sep"></div>
+        <button id="btn-copy" class="btn btn-ghost" disabled title="Copy selected rows (Ctrl+C)">Copy</button>
+        <button id="btn-paste" class="btn btn-ghost" title="Paste rows (Ctrl+V)">Paste</button>
+        <div class="toolbar-sep"></div>
+        <button id="btn-delete" class="btn btn-danger" disabled title="Delete selected rows (Delete)">Delete Selected</button>
+      </div>
+    </header>
+
+    <div class="table-wrap">
+      <table id="device-table">
+        <thead>
+          <tr>
+            <th class="col-check"><input type="checkbox" id="select-all" title="Select all"></th>
+            <th class="col-name">Device Name</th>
+            <th class="col-mac">MAC Address</th>
+            <th class="col-ip">IP Address</th>
+            <th class="col-copy"></th>
+            <th class="col-copy"></th>
+            <th class="col-act"></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+
+      <div id="empty-state" class="empty-state hidden">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.3">
+          <circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/>
+          <line x1="12" y1="8" x2="5.5" y2="16.2"/><line x1="12" y1="8" x2="18.5" y2="16.2"/>
+        </svg>
+        <p>No devices yet</p>
+        <button id="btn-empty-add" class="btn btn-primary">Add your first device</button>
+      </div>
+    </div>
+
+    <footer class="app-footer">
+      <span id="status-text">0 devices</span>
+      <span class="shortcuts">
+        <kbd>Click</kbd> edit &nbsp;·&nbsp;
+        <kbd>Tab</kbd> next cell &nbsp;·&nbsp;
+        <kbd>Ctrl+C</kbd> copy &nbsp;·&nbsp;
+        <kbd>Ctrl+V</kbd> paste &nbsp;·&nbsp;
+        <kbd>Del</kbd> delete selected
+      </span>
+    </footer>
+
+  </div>
+
+  <div id="ctx-menu" class="ctx-menu hidden">
+    <button data-action="copy-row">Copy Row</button>
+    <button data-action="paste-after">Paste After</button>
+    <button data-action="insert-above">Insert Row Above</button>
+    <button data-action="insert-below">Insert Row Below</button>
+    <hr>
+    <button data-action="delete-row" class="danger">Delete Row</button>
+  </div>
+
+  <div id="toast" class="toast" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
