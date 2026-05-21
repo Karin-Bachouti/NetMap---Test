@@ -30,6 +30,36 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
 }
 
+// Works on HTTP (no secure context) by falling back to execCommand
+function copyToClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    return navigator.clipboard.writeText(text);
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  try { document.execCommand('copy'); } catch {}
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
+// Copy a single field from all selected rows (one value per line)
+function copyField(field) {
+  if (!selectedIds.size) { toast('Select a row first'); return; }
+  const values = devices
+    .filter(d => selectedIds.has(d.id))
+    .map(d => d[field])
+    .join('\n');
+  const label = field === 'macAddress' ? 'MAC' : 'IP';
+  const n = selectedIds.size;
+  copyToClipboard(values).then(() =>
+    toast(`Copied ${n > 1 ? n + ' ' : ''}${label} address${n > 1 ? 'es' : ''}`)
+  );
+}
+
 // ── Validation ─────────────────────────────────────────────────────────────────
 
 const MAC_RE = /^([0-9A-Fa-f]{2}[:\-.]){5}([0-9A-Fa-f]{2})$/;
@@ -162,11 +192,12 @@ function buildRow(device) {
   const btnCopyMac = document.createElement('button');
   btnCopyMac.className = 'btn-copy-field';
   btnCopyMac.textContent = 'Copy MAC';
+  btnCopyMac.title = 'Copy MAC address (Ctrl+Shift+M for selected rows)';
   btnCopyMac.addEventListener('click', e => {
     e.stopPropagation();
-    navigator.clipboard.writeText(device.macAddress)
-      .then(() => toast(`Copied: ${device.macAddress || '(empty)'}`))
-      .catch(() => {});
+    copyToClipboard(device.macAddress).then(() =>
+      toast(`Copied: ${device.macAddress || '(empty)'}`)
+    );
   });
   tdCopyMac.addEventListener('click', e => e.stopPropagation());
   tdCopyMac.appendChild(btnCopyMac);
@@ -178,11 +209,12 @@ function buildRow(device) {
   const btnCopyIp = document.createElement('button');
   btnCopyIp.className = 'btn-copy-field';
   btnCopyIp.textContent = 'Copy IP';
+  btnCopyIp.title = 'Copy IP address (Ctrl+Shift+I for selected rows)';
   btnCopyIp.addEventListener('click', e => {
     e.stopPropagation();
-    navigator.clipboard.writeText(device.ipAddress)
-      .then(() => toast(`Copied: ${device.ipAddress || '(empty)'}`))
-      .catch(() => {});
+    copyToClipboard(device.ipAddress).then(() =>
+      toast(`Copied: ${device.ipAddress || '(empty)'}`)
+    );
   });
   tdCopyIp.addEventListener('click', e => e.stopPropagation());
   tdCopyIp.appendChild(btnCopyIp);
@@ -392,13 +424,25 @@ function copyRows(ids = [...selectedIds]) {
   const rows = devices.filter(d => ids.includes(d.id));
   if (!rows.length) return;
   internalClipboard = rows.map(d => ({ ...d }));
-  const tsv = rowsToTSV(rows);
-  navigator.clipboard.writeText(tsv)
-    .then(() => toast(`Copied ${rows.length} row${rows.length > 1 ? 's' : ''}`))
-    .catch(() => toast('Copied to internal clipboard'));
+  copyToClipboard(rowsToTSV(rows)).then(() =>
+    toast(`Copied ${rows.length} row${rows.length > 1 ? 's' : ''}`)
+  );
 }
 
 function pasteRows(afterId = null) {
+  const pasteInternal = () => {
+    if (!internalClipboard.length) { toast('Nothing to paste'); return; }
+    const rows = internalClipboard.map(d => ({ ...d, id: uid() }));
+    insertDevices(rows, afterId);
+    renderTable();
+    toast(`Pasted ${rows.length} row${rows.length > 1 ? 's' : ''}`);
+  };
+
+  if (!navigator.clipboard || !window.isSecureContext) {
+    pasteInternal();
+    return;
+  }
+
   navigator.clipboard.readText()
     .then(text => {
       const rows = parseTSV(text);
@@ -407,14 +451,7 @@ function pasteRows(afterId = null) {
       renderTable();
       toast(`Pasted ${rows.length} row${rows.length > 1 ? 's' : ''}`);
     })
-    .catch(() => {
-      // Clipboard API blocked — use internal clipboard
-      if (!internalClipboard.length) { toast('Nothing to paste'); return; }
-      const rows = internalClipboard.map(d => ({ ...d, id: uid() }));
-      insertDevices(rows, afterId);
-      renderTable();
-      toast(`Pasted ${rows.length} row${rows.length > 1 ? 's' : ''}`);
-    });
+    .catch(pasteInternal);
 }
 
 // ── Context menu ───────────────────────────────────────────────────────────────
@@ -503,6 +540,14 @@ function init() {
     }
     if (e.ctrlKey && e.key === 'v') {
       pasteRows();
+    }
+    if (e.ctrlKey && e.shiftKey && e.key === 'M') {
+      e.preventDefault();
+      copyField('macAddress');
+    }
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+      e.preventDefault();
+      copyField('ipAddress');
     }
     if ((e.key === 'Delete' || e.key === 'Backspace') && selectedIds.size > 0) {
       if (document.activeElement.tagName === 'INPUT') return;
